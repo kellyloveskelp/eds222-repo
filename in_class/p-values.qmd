@@ -1,0 +1,178 @@
+---
+title: "P-values two ways"
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: false
+
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw())
+
+# Read the soil core data
+soil_cores <- read_csv("/courses/EDS222/data/exide-soil-cores.csv")
+```
+
+## Permutation test
+
+In the lab, you used a **permutation test** to investigate the claim *"Lead is elevated in the drip line compared to the rest of the yard"*. In this activity, you will investigate the claim *"Soil samples with lead levels exceeding 200ppm are more prevalent north of Exide than to the south"*. Use the *difference in proportions* as the statistic to test this claim.
+
+### State your hypotheses
+
+State the null and alternative hypotheses for this claim.
+
+$H_0$: There's no relationship between soil sample lead levels over 200ppm and cardinal direction from Exide.
+
+$H_A$: Soil samples with lead levels exceeding 200ppm are more prevalent north of Exide than to the south.
+
+### Calculate the observed value of the statistic
+
+Fill in the code chunk below to calculate the observed value of the statistic
+
+::: callout-tip
+Use `dplyr` functions to wrangle the soil core data for this part. Properties starting with "ENA" are in the extended north area, and the "ESA" prefix means extended south area. `str_sub()` will help here.
+:::
+
+```{r}
+library(dplyr)
+
+# create a column called "area", which is the first three characters of property_id
+# then filter to observations where area is ENA or ESA
+ena_esa <- soil_cores |>
+  mutate(area = str_sub(property_id, 1, 3)) |>
+  filter(area %in% c("ENA", "ESA"))
+
+
+# summarize to get the proportion of samples where lead is over 200 ppm, by area
+# sort by the area
+area_summ <- ena_esa |>
+  summarize(mean_pb_200 = mean(pb_ppm >= 200), .by = area) |>
+  arrange(area)
+
+obs_diff_props <- area_summ$mean_pb_200[1] - area_summ$mean_pb_200[2]
+
+obs_diff_props
+```
+
+### Shuffle the predictor variable and recalculate the statistic
+
+Shuffle the predictor variable and recalculate the statistic. Do it just once - we'll repeat in the next section.
+
+```{r}
+shuffled_summ <- ena_esa |>
+  mutate(area_shuffled = sample(area)) |> 
+  summarize(mean_pb_200 = mean(pb_ppm >= 200), .by = area_shuffled) |> 
+  arrange(area_shuffled)
+  # shuffle the predictor (use mutate and sample)
+  # summarize to get the proportion of samples where lead is over 200 ppm, by area
+  # sort by the area
+
+shuffled_diff_props <- shuffled_summ$mean_pb_200[1] - shuffled_summ$mean_pb_200[2]# get the difference in proportions between the two groups
+
+shuffled_diff_props
+```
+
+### Repeat shuffling
+
+Repeat shuffling 10,000 times to create a vector that simulates the null distribution.
+
+```{r}
+area_null_dist <- replicate(
+  1e4,
+  {shuffled_summ <- ena_esa |>
+    mutate(area_shuffled = sample(area)) |> 
+    summarize(mean_pb_200 = mean(pb_ppm >= 200), .by = area_shuffled) |> 
+    arrange(area_shuffled)
+
+    shuffled_summ$mean_pb_200[1] - 
+      shuffled_summ$mean_pb_200[2]
+    # put your "shuffle once" code in here, to repeat it 10,000 times
+  }
+)
+```
+
+### Compare the observed to the null
+
+Visualize the null distribution using a histogram and add a vertical line indicating the observed statistic. Indicate which part of the null distribution is greater than or equal to the observed statistic using fill.
+
+```{r}
+tibble(diff_props = area_null_dist) |>
+  ggplot(aes(diff_props)) +
+  geom_histogram(binwidth = 0.01) 
+  # geom_vline(xintercept = , color = "cornflowerblue", linewidth = 1.2)
+  # set the aesthetics for x and fill using ggplot
+  # add a histogram
+  # add a vertical line at the observed difference in proportions
+```
+
+Calculate your p-value.
+
+```{r}
+pval <- # the proportion of null distribution values greater than or equal to the observed statistic
+
+pval
+```
+
+## Mathematical model
+
+Now, let's repeat the process to estimate the p-value, but use the mathematical model instead.
+
+The steps **State your hypotheses** and **Calculate the observed value of the statistic** are unchanged.
+
+### Calculate the standard error
+
+The standard error of the difference in proportions for a null distribution is:
+
+$$SE = \sqrt{\hat p_{pool} (1 - \hat p_{pool}) \left( \frac{1}{n_1} + \frac{1}{n_2} \right) }$$
+
+Fill in the code chunk below to calculate the standard error.
+
+```{r}
+p_pool <- # total "successes" (soil lead over 200) over total observations
+n1 <- # number of observations in the "north" group
+n2 <- # number of observations in the "south" group
+se <- # use the formula above
+```
+
+### Compare the observed to the null
+
+Estimate the null distribution as a normal distribution, with a mean of 0 and a standard deviation equal to the standard error.
+
+Visualize the null distribution and the observed value of the null statistic.
+
+```{r}
+# Create a tibble for the null distribution
+null_dist <- tibble(
+  # create a column called "diff_props", a sequence from -3SE to 3SE with length.out of 1000
+  # then create a column called "null_pdf", the PDF of the normal distribution with the right mean and standard deviation
+)
+
+# Visualize the null distribution using a line geometry, then add a vertical line indicating the observed value of 
+# the statistic
+```
+
+Calculate your p-value. Once again, it's the area under the curve. But instead of counting up permutations, you need to integrate the PDF. Don't worry - you don't have to do it by hand! `pnorm()` is the area under the curve for the normal distribution.
+
+Here's an example of how it works. Given a normal distribution with mean 0 and sd 2, the area under the curve *to the left* of -2 is:
+
+```{r}
+pnorm(-2, mean = 0, sd = 2)
+```
+
+By default, `pnorm()` gets the area under the curve to the left of a value. To get the area under the curve *to the right* of a value, set the parameter `lower.tail` to `FALSE`.
+
+```{r}
+pnorm(-2, mean = 0, sd = 2, lower.tail = FALSE)
+```
+
+Now, fill in the code chunk below to calculate your p-value.
+
+```{r}
+pval <- pnorm(your_observed_statistic, mean = ???, sd = ???, lower.tail = ???)
+```
+
+## P-values two ways
+
+How do your two p-values compare?

@@ -1,0 +1,113 @@
+# Pre-lab Prep
+## Multiple Regression: Simpson's Paradox
+
+```{r}
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw(16))
+```
+
+## Choose our parameters
+
+```{r}
+B0 <- 10 # intercept
+B1 <- 0.1 # Additional typo per increase in typing speed
+B2 <- -10 # Difference between typist B and the reference level A
+sigma <- 3 # Standard dev of the residuals
+```
+
+## Generate our predictors
+
+Remember, for Simpson's paradox, there mus tbe a relationship between the predictors.
+
+```{r}
+# Sample size
+N <- 30
+
+# Typist identities
+typist <- sample(c("A", "B"), N, replace = TRUE)
+
+# Dummy variable for typist B
+typistB <- ifelse(typist == "B", 1, 0)
+
+# THIS IS THE KEY PART
+# The continuous predictor variable is dependent on the categorical variable
+typing_speed <- rnorm(N, mean = ifelse(typist == "B", 100, 45), sd = 15)
+```
+
+## Calculate expected value of the response
+```{r}
+expected_typos <- B0 + B1 * typing_speed + B2 * typistB
+```
+
+## Simulate the response variable
+
+```{r}
+typos <- rnorm(
+    n = N,
+    mean = expected_typos,
+    sd = sigma
+)
+```
+
+## Visualize!
+
+```{r}
+simulated_typing <- tibble(typing_speed, typos, typist)
+
+ggplot(simulated_typing, aes(typing_speed, typos, fill = typist)) +
+    geom_point(size = 2, shape = 21)
+```
+
+## Fit and interpret
+
+If we only look at typing speed:
+
+
+```{r}
+one_predictor_lm <- lm(typos ~ typing_speed, simulated_typing)
+summary(one_predictor_lm)
+```
+Output:
+Call:
+lm(formula = typos ~ typing_speed, data = simulated_typing)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-8.1567 -2.2406  0.3119  2.6887  8.4195 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  16.76132    1.85355   9.043 8.45e-10 ***
+*typing_speed  0.83823*    0.02287  36.647  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 3.893 on 28 degrees of freedom
+Multiple R-squared:  0.9796,	Adjusted R-squared:  0.9788 
+F-statistic:  1343 on 1 and 28 DF,  p-value: < 2.2e-16
+
+
+```{r}
+two_predictor_lm <- lm(typos ~ typing_speed + typist, simulated_typing)
+summary(two_predictor_lm)
+```
+Output:
+Call:
+lm(formula = typos ~ typing_speed + typist, data = simulated_typing)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-8.354 -1.986  0.331  2.210  4.953 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  11.77153    2.01748   5.835 3.27e-06 ***
+*typing_speed  0.97228*   0.04014  24.222  < 2e-16 ***
+typistB      -9.45567    2.50041  -3.782 0.000786 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 3.206 on 27 degrees of freedom
+Multiple R-squared:  0.9866,	Adjusted R-squared:  0.9857 
+F-statistic: 997.6 on 2 and 27 DF,  p-value: < 2.2e-16

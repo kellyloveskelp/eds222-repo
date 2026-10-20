@@ -1,0 +1,90 @@
+```{r}
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw())
+```
+
+## Simulate the predictor variable
+
+Create a variable called `x`. It should be categorical with 50 values of two levels, "A" and "B". Simulate it using the `sample()` function. 
+
+Then, choose a name for the dummy variable.
+
+```{r}
+x <- sample(c("A", "B"), 50, replace = TRUE)
+x_dummy <- ifelse(x == "A", 0, 1)
+```
+
+## Choose your simulation parameters
+
+Create variables for $\beta_0 = -10$, $\beta_1 = 20$, and $sigma = 8$.
+
+```{r}
+B0 <- -10
+B1 <- 20
+sigma <- 8
+```
+
+## Calculate the expected
+
+Calculate the expected value of $y$.
+
+```{r}
+y_expected <- B0 + B1 * x_dummy
+```
+
+## Simulate the response
+
+You have the expected value and $\sigma$. Use these to simulate $y$.
+
+Then make a data frame with the predictor and response.
+
+```{r}
+y <- rnorm(
+  n = 50,
+  mean = mean(y_expected),
+  sd = sigma
+)
+
+simulated_data <- tibble(
+  "Predictor" = x,
+  "Response" = y
+)
+```
+
+## Fit a model
+
+Fit a linear model to the response and predictor variables.
+
+```{r}
+categorical_lm <- lm(Response ~ Predictor, data = simulated_data)
+# How the response is informed by the predictor
+# Verify the model coefficients approximate the simulation parameters
+summary(categorical_lm)
+```
+
+## Visualize the data and model
+
+Fill in the blanks of the ggplot call to complete the visualization.
+
+`annotate()` adds one-off geometries to a ggplot. The following annotations represent $\beta_0$ and $\beta_1$.
+
+```{r}
+betas <- coef(categorical_lm)
+
+ggplot(simulated_data, aes(x = Predictor, y = Response)) +
+  geom_point(position = position_jitter(width = 0.2)) +
+  # beta_0 = mean of reference level
+  annotate("point", x = 1, y = betas[1], color = "cornflowerblue") +
+  # beta_1 = difference from reference level
+  annotate(
+    "segment",
+    x = 1.5,
+    xend = 1.5,
+    y = betas[1],
+    yend = sum(betas),
+    color = "cornflowerblue"
+  ) +
+  # beta_0 + beta_1 = mean of second level
+  annotate("point", x = 2, y = sum(betas), color = "cornflowerblue")
+```

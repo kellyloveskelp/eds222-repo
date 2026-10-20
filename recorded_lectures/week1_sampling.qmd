@@ -1,0 +1,66 @@
+---
+title: "EDS 222 Week 1 Wednesday"
+subtitle: "Sampling"
+format: html
+---
+
+We're going to see how to sample from both *empirical* and *parametri*c* distributions in R. This is the foundation of *simulation* which is the most important tool in this couse.
+
+## Empirical Dsitributions
+
+```{r}
+library(tidyverse)
+set.seed(222)
+#source("/home/kellymorgan/meds/my_aes/my_theme.R")
+# theme_set(my_theme())
+theme_set(theme_bw())
+
+soil_cores <- read_csv("exide-soil-cores.csv")
+```
+
+`sample()` draws samples from a vector (e.g., a column in a data frame). 
+
+```{r}
+pb_ppm_sample <- sample(soil_cores$pb_ppm, size = 50)
+
+# Vizualize thw while distribution
+ggplot(soil_cores, aes(pb_ppm)) +
+    geom_histogram(binwidth = 20) +
+    xlim(0, 1000)
+
+# Visualize just our sample 
+tibble(pb_ppm = pb_ppm_sample) |> 
+    ggplot(aes(pb_ppm)) +
+    geom_histogram(binwidth = 50)
+```
+
+`slice_sample()` draws samples from a data frame
+
+```{r}
+soil_sample <- soil_cores  |> 
+    slice_sample(n =50) # keeps soil_samlpe in dataframe format instead of vector
+
+ggplot(soil_sample, aes(pb_ppm)) +
+    geom_histogram(binwidth = 20)
+```
+
+## Parametric distributions 
+
+Visualize the PDF with `dnorm()` and other `d___()` functions. When you see a "d__()" function, think PDF: parametric distribution function. 
+
+```{r}
+tibble(
+    x = seq(-860, 1370, length.out = 1000),
+    pdf = dnorm(x, mean = 253, sd = 71) # need to define mean and sd
+) |> 
+    ggplot(aes(x, pdf)) +
+    geom_line(linewidth = 1.5)
+```
+
+Draw samples from this distribution with `rnorm()`.
+
+```{r}
+normal_sample <- tibble( x = rnorm(25, mean = 254, sd = 371))
+ggplot(normal_sample, aes(x)) +
+    geom_histogram(binwidth = 100)
+```

@@ -1,0 +1,116 @@
+## Simpson's Paradox 
+### With kelp and oysters!
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: false
+
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw())
+```
+
+## Before you code
+
+Before you start coding in this document, your group should have completed the sections **Design the scenario** and **Choose your parameters** from the handout.
+
+## Simulate the data
+
+You've chosen your parameters ($\beta$s and $\sigma$). Define them here:
+
+```{r}
+beta_0 <- 3 # Intercept
+beta_1 <- -0.15 # Coefficient for the first (continuous) predictor
+beta_2 <- 1.75 # Coefficient for the second (categorical) predictor
+sigma <- 0.25 # Standard deviation of the residuals
+```
+
+### Generate random values
+
+1. Simulate your predictor variables. 
+
+Remember, for Simpson's paradox to emerge, there has to be a dependency between the two predictor variables. In this case, you have one categorical and one continuous predictor. Simulate the categorical variable first, then use the level of the category when you simulate the continuous variable. For example, if you use `rnorm()` to simulate the continuous variable, make the `mean` depend on the category level. Alternatively, if you use `runif()`, make the `min` and `max` depend on the category level. `ifelse()` is useful here.
+
+```{r}
+# Sample size
+N <- 30
+
+# Edit the following code to simulate your _categorical_ predictor variable - kelp = 1, oyster = 0.
+taxa <- sample(c("kelp", "oyster"), N, replace = TRUE)
+
+# Dummy variable for taxa B, oysters
+taxaB <- ifelse(taxa == "kelp", 1, 0)
+
+# Edit the following code to simulate your _continuous_ predictor variable. Make
+# sure it depends on your second predictor!
+
+temp <- rnorm(
+  n = N,
+  mean = ifelse(taxa == "kelp", 13, 7),
+  sd = 2
+)
+```
+
+2. Calculate the expected value of the response. This is _similar_ to regression with a single predictor, but includes a second term.
+
+$$
+y = \beta_0 + \beta_1 x_1 + \beta_2 x_2
+$$
+
+```{r}
+# Edit the following code to calculate the _expected_ value of the response
+exp_biomass <- beta_0 + beta_1 * temp + beta_2 * taxaB
+```
+
+3. Simulate the response variable. This is the _same_ as regression with a single predictor. The expected value incorporates the influence of the multiple predictors. Once you have that number, you just need normally-distributed residuals.
+
+```{r}
+# Edit the following code to simulate your _response_ variable
+biomass <- rnorm(
+    n = N,
+    mean = exp_biomass,
+    sd = sigma
+)
+```
+
+Visualize your simulated data. Verify it's comparable to your original drawing. If necessary, tweak your parameter values until it represents your scenario reasonably well.
+
+```{r}
+# First, put the predictors and response in a data frame all together
+bio_tb <- tibble(temp, biomass, fill = taxa)
+# Then, use ggplot to make a scatter plot. Think carefully about which
+# aesthetics to use.
+ggplot(bio_tb, aes(temp, biomass, fill = taxa)) +
+    geom_point(size = 2, shape = 21)
+
+```
+
+## Fit and interpret regression models
+
+### Fit the models
+
+Use `lm()` to fit _two_ regression models to your simulated data.
+
+In the first model, only include the first predictor.
+
+```{r}
+one_predictor_lm <- lm(biomass ~ temp, bio_tb)
+summary(one_predictor_lm)
+```
+
+In the second model, include both predictors.
+
+```{r}
+two_predictor_lm <- lm(biomass ~ temp + taxa, bio_tb)
+summary(two_predictor_lm)
+```
+
+### Interpret the models
+
+Use `summary()` on both models. If you've simulated the paradox properly, the sign of the coefficient for the first predictor should flip between the models.
+
+```{r}
+summary(one_predictor_lm)
+summary(two_predictor_lm)
+```

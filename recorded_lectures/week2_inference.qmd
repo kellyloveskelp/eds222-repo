@@ -1,0 +1,76 @@
+---
+title: "EDS 222 Week 2 Wednesday"
+subtitle: "Mathematical Models of Inference"
+format: html
+---
+
+```{r}
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw())
+```
+
+Here we'll verify our understanding of a statisticsal procedure using simulation.
+
+## 1. Choose the parameters for our simulation
+
+```{r}
+p1 <- 0.60
+n1 <- 35
+p2 <- 0.52
+n2 <- 25
+```
+
+## 2 Simulate a sample and calculate the sample statistic
+
+Use `rbinom()` for our binary response variable (Soil Pb > 200).
+
+```{r}
+pre1950 <- rbinom(n = 1, size = n1, prob =p1)
+post1950 <- rbinom(n = 1, size = n2, prob =p2)
+
+# Our sample statistic
+
+phat1 <- pre1950 / n1
+phat2 <- post1950 / n2
+diff_prop <- phat1 - phat2
+```
+
+## 3. Coninue simulating samples until we reach critical mass
+
+In this case, lets do 10,000...
+
+```{r}
+pre1950 <- rbinom(n = 1e4, size = n1, prob = p1)
+post1950 <- rbinom(n = 1e4, size = n2, prob = p2)
+
+phat1 <- pre1950 / n1
+phat2 <- post1950 / n2
+diff_prop <- phat1 - phat2
+
+tibble(diff_prop) |> 
+    ggplot(aes(diff_prop)) +
+    geom_histogram(binwidth = 0.04) +
+    geom_vline(xintercept = p1 - p2, color = "cornflowerblue", linewidth = 1.2)
+```
+
+Looks pretty normal!
+
+## 4. Check our simulation results against the claim
+
+>95% of samples tats fall within 1.96 SEs (standard errors) of the population pararmeter.
+
+```{r}
+se <- sqrt(phat1 * (1 - phat1) / n1 + phat2 * (1 - phat2) / n2)
+head(se)
+
+mean((p1 - p2 >= diff_prop - 1.96 * se) & (p1 - p2 <= diff_prop + 1.96 * se))
+# What fraction of the time was true pop prop greater than our diff in SEs
+# How often is it falling within 1.96 SEs
+```
+
+Good but not perfect! Coverage is 93.8%, whihc is a bit under the expected 95%
+
+Think about...
+1. What do you think might be affecting the accuracy of this inference?
+2. Once you come up with a hypothesis, how would you modify this experiement to test your hypothesis? 

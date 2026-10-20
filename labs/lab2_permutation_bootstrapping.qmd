@@ -1,0 +1,53 @@
+# Lab 2: Inference (Permutation and Bootstrapping)
+
+## Investigating “yes/no” questions with permutation
+
+### State your hypotheses
+
+H0 : There *is no* difference between lead levels in the drip line compared to the rest of the yard. Aka, the difference is 0.
+
+H1 : There *is* a difference between lead levels in the drip line compared to the rest of the yard. Aka, the difference is not 0. 
+
+```{r}
+library(tidyverse)
+set.seed(222)
+soil_data <- read_csv("labs/data/exide-soil-cores.csv")
+unique(soil_data$location_code)
+```
+
+Calculate the difference in means between the drip line and yard observations in the sample. Remember, this should be a single number (not a data frame or pair of means).
+```{r}
+drip <- filter(soil_data, location_code == "DL")
+yard <- filter(soil_data, location_code == "YD")
+
+mean_diff <- mean(drip$pb_ppm) - mean(yard$pb_ppm)
+print(paste("Difference in Means = ", mean_diff))
+```
+
+
+### Shuffle the predictor variable and recalculate the statistic
+```{r}
+soil_shuffled <- soil_data |> 
+    mutate(loc_code_shuffled = sample(location_code)) |> 
+    summarize(mean_pb = mean(pb_ppm), .by = loc_code_shuffled)
+
+mean_diff_shuff <- soil_shuffled$mean_pb[1] - soil_shuffled$mean_pb[2]
+print(paste("Difference in Means = ", mean_diff_shuff))
+```
+
+### Repeat shuffling with replicate()
+```{r}
+shuff_replicated <- replicate(10000, {
+    mutate(soil_data, shuff_location_code = sample(location_code)) |> 
+    summarize(pb_mean = mean(pb_ppm), .by = shuff_location_code)
+
+    soil_shuffled$mean_pb[2] - soil_shuffled$mean_pb[1]
+})
+```
+
+```{r}
+tibble(diff_means = shuff_replicated) |> 
+    ggplot(aes(diff_means)) +
+    geom_histogram(binwidth = 5)
+
+```

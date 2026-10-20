@@ -1,0 +1,125 @@
+---
+title: "Confidence intervals two ways"
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: false
+
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw())
+
+# Read the soil core data
+soil_cores <- read_csv("/courses/EDS222/data/exide-soil-cores.csv")
+```
+
+## Bootstrapping
+
+In the lab, you used **bootstrapping** to investigate the claim *"Neighborhoods north of the Exide plant were exposed to more lead than those south"*. In this activity, you will investigate the claim *"Soil samples with lead levels exceeding 200ppm are more prevalent north of Exide than to the south"*. Use the *difference in proportions* as the statistic to test this claim.
+
+### Calculate the observed value of the statistic
+
+You can reuse your code from p-values.qmd.
+
+```{r}
+
+```
+
+### Resample observations and recalculate the statistic
+
+Resample rows from the data frame and recalculate the statistic. Repeat this 10,000 times to simulate the *sampling distribution*.
+
+```{r}
+area_samp_dist <- replicate(
+  1e4,
+  {
+    resampled_summ <- ena_esa |>
+      # use slice_sample to resample rows with replacement
+      # summarize to get the proportions over 200 within groups
+      # sort by area
+
+    # get the difference of proportions
+  }
+)
+```
+
+### Find the *confidence interval*
+
+Use the bootstrapped sampling distribution to estimate the *95% confidence interval*.
+
+```{r}
+area_95ci <- quantile(your_sampling_distribution_here, c(lower_percentile, upper_percentile))
+```
+
+Visualize the sampling distribution using a histogram. Use the fill to indicate the values inside the 95% confidence interval, and vertical lines to indicate the observed statistic and confidence interval boundaries.
+
+```{r}
+tibble(diff_props = area_samp_dist) |>
+  # set the aesthetics for x and fill using ggplot
+  # add a histogram
+  # add a vertical line at the observed difference in proportions
+  # add two vertical lines indicating the boundaries of the confidence interval
+```
+
+## Mathematical model
+
+Now, let's repeat the process to estimate the confidence interval, but use the mathematical model instead.
+
+The step **Calculate the observed value of the statistic** is unchanged.
+
+### Calculate the standard error
+
+The standard error of the difference in proportions for a sampling distribution is:
+
+$$SE = \sqrt{\frac{\hat p_1 (1 - \hat p_1)}{n_1} + \frac{\hat p_2 (1 - \hat p_2)}{n_2}}$$
+
+Fill in the code chunk below to calculate the standard error.
+
+```{r}
+p1 <- # proportion of soil lead over 200 observation in the "north" group
+p2 <- # proportion of soil lead over 200 observation in the "south" group
+n1 <- # number of observations in the "north" group
+n2 <- # number of observations in the "south" group
+se <- # use the formula above
+```
+
+### Find the *confidence interval*
+
+Now we'll use the normal distribution to approximate the sampling distribution.
+
+First, visualize the sampling distribution with the normal PDF.
+
+```{r}
+# Create a tibble for the sampling distribution
+samp_dist <- tibble(
+  # create a column called "diff_props", a sequence from observed-2SE to 
+    # observed+2SE with length.out of 1000
+  # then create a column called "samp_pdf", the PDF of the normal distribution
+    # with the right mean and standard deviation
+)
+
+# Visualize the sampling distribution using a line geometry, then add a vertical 
+  # line indicating the observed value of the statistic
+```
+
+To get the boundaries of the confidence interval, you need to find the interval containing 95% of the area under the curve of the sampling distribution. With bootstrapping, you used the 2.5% and 97.5% *quantiles*. You can do the same thing with the normal distribution using `qnorm()`.
+
+Here's an example of using `qnorm()` to get the value of the 25% and 75% quantiles of a normal distribution with mean of 1 and sd of 0.5.
+
+```{r}
+qnorm(p = c(0.25, 0.75), mean = 1, sd = 0.5)
+```
+
+That means 50% of the area (25%-75%) under this curve falls betwen \~0.66 and \~1.34.
+
+Now, use `qnorm()` to estimate the 95% confidence interval.
+
+```{r}
+area_95ci_qnorm <- qnorm(p = ???, mean = ???, sd = ???)
+```
+
+## Confidence intervals two ways
+
+How do your two confidence intervals compare?

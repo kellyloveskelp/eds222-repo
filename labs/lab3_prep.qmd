@@ -1,0 +1,91 @@
+```{r}
+library(tidyverse)
+set.seed(222)
+theme(theme_bw())
+```
+Simulate data following a linear regression model.
+
+Example: the relationship between water temperature and the length of copepods.
+
+1. Choose our parameters
+2. Simulate data
+3. Fit the model
+4. Interpret the model
+
+## Choose parameters
+
+Our model has three parameters: two betas and a sigma. our simulation needs one more parameter, our sample size.
+
+```{r}
+beta_0 <- 3000 # intercept: length of a coperpods in um when temp is degC
+
+beta_1 <- -55 # slope: change in length per degC
+
+sigma <- 100 #standard dev of the residuals, the "spread" around the line
+
+n <- 50 # sample size
+```
+## Simulate the data
+1. Simulate the _predictor_
+2. Calcualte the _expected_
+3. Simulate the _response_
+4. Assemble a data 
+
+### Simulate the predictor
+```{r}
+temp_c <- runif(n, min = 2, max = 14)
+```
+
+### Calculate the expected
+```{r}
+exp_length_um <- beta_0 + beta_2 * temp_c
+```
+
+### Simulate the repsonse
+
+The response is normally distributed around the line.
+
+```{r}
+length_um <- rnorm(n, mean = exp_length_um, sd = sigma)
+# notice the mean is the vector of the expected values
+```
+
+### Assemble the dataframe
+```{r}
+# Create a tibble
+copepods <- tibble(temp_c, length_um)
+
+# Visualize
+ggplot(copepods, aes(temp_c, length_um)) +
+    geom_point()
+# Negative relationship between temperature and length
+```
+
+### Fit the model
+
+Use the `lm()` to fit a model. Specify the relationship between repsonse and predictor with a _formula_.
+
+```{r}
+copepod_lm <- lm(length_um ~ temp_c, data = copepods)
+```
+Done!
+
+## Interpret the model
+
+Inspect the coefficients using `summary()`.
+
+```{r}
+summary(copepod_lm)
+```
+
+Use `sigma()` to ge the model estimate of sigma.
+
+```{r}
+sigma(copepod_lm)
+```
+
+When simulating data froma. linear regression model:
+
+1. Choose our parameters (betas, sigma, n)
+2. Simulate the data (predictor, expected, response)
+3. Interpret the model (summary(), sigma())

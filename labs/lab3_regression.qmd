@@ -1,0 +1,117 @@
+---
+title: "Lab 3: Simulate Data + Fit Regression Line"
+format: html
+---
+
+# Simulating Dataset
+
+```{r}
+# Load packages
+library(tidyverse)
+set.seed(222)
+```
+
+
+```{r}
+# Define parameters
+beta_0 <- 2
+beta_1 <- 0.2
+sigma <- 4
+```
+
+## Simulate Predictor Variable
+
+```{r}
+# Generate random values
+sun <- runif(n = 30, min = 0, max = 60)
+```
+
+## Calculate the expected value of the response
+
+```{r}
+# Calculate the _expected_ value of the response
+exp_pg <- beta_0 + beta_1 * sun
+```
+
+## Simulate response variable
+
+```{r}
+# Simulate response variable
+plant_growth <- rnorm(
+  n = 30,
+  mean = mean(exp_pg),
+  sd = sigma
+)
+```
+
+```{r}
+# Visualize
+plant_df <- tibble(Sun = sun,
+        Plant_Growth = plant_growth)
+
+ggplot(plant_df, aes(x = Sun, y = Plant_Growth)) +
+    geom_point() +
+    labs(title = "Title")
+```
+
+# Fit the model
+
+```{r}
+# Create lm model
+plant_lm <- lm(Plant_Growth ~ Sun, data = plant_df)
+```
+
+```{r}
+summary(plant_lm)
+sigma(plant_lm)
+```
+
+# Interpret the model
+
+## Increase sigma
+
+
+```{r}
+# Keep your predictor variable the same, but increase sigma by 2x
+double_sigma <- sigma * 2
+# Modify the following lines of code to re-run your simulation with the bigger sigma
+expected_response2 <- beta_0 + beta_1 * sun
+response_variable2 <- rnorm(
+  n = 30,
+  mean = mean(expected_response2),
+  sd = double_sigma
+)
+plant_df2 <- tibble(Sun = sun, Plant_Growth = response_variable2)
+model2 <- lm(Plant_Growth ~ Sun, data = plant_df2)
+
+# Get your betas and their standard errors
+summary(model2)
+sigma(model2)
+# How do they compare to the population parameters, relative to the original simulation?
+```
+
+## Increase n
+
+
+```{r}
+# Now increase n by 2x. You'll need to create more predictor variable values.
+# Generate random values
+sun3 <- runif(n = 60, min = 0, max = 60)
+
+# Modify the following lines of code to re-run your simulation with the bigger n
+expected_response3 <- beta_0 + beta_1 * sun3 #?
+response_variable3 <- rnorm(
+  n = 60,
+  mean = mean(expected_response3),
+  sd = sigma
+)
+
+plant_df3 <- tibble(Sun = sun3, Plant_Growth = response_variable3)
+
+model3 <- lm(Plant_Growth ~ Sun, data = plant_df3)
+
+# Get your betas and their standard errors
+summary(model3)
+sigma(model3)
+# How do they compare to the population parameters, relative to the original simulation?
+```
