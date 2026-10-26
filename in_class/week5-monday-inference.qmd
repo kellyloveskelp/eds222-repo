@@ -1,0 +1,326 @@
+Each part has two steps:
+
+- **We do**: we write the code together for nitrate in drinking water wells
+- **You do**: you fill in the blanks on a new problem
+
+```{r}
+library(tidyverse)
+set.seed(222)
+theme_set(theme_bw())
+```
+
+## Scenarios
+
+### We do: nitrate in drinking water wells
+
+Fertilizer and manure from farms leach nitrate into groundwater, and many rural communities in California's Central Valley drink from wells. Nitrate above 10 mg/L (the drinking water standard) is a health risk, especially for infants. If agriculture is a source, wells surrounded by more farmland should have more nitrate.
+
+- x: farmland within 1 km of the well (%)
+- y: nitrate in well water (mg/L)
+- $\beta_1$: change in nitrate per additional percentage point of farmland
+
+**Define our population parameters:**
+```{r}
+# intercept (nitrate when there;s farmland)
+wells_beta_0 <- 4
+# slope (additional nitrate per percent farmland)
+wells_beta_1 <- 0.035
+# sigma (spread of wells around regression line)
+wells_sigma <- 2
+```
+
+**Simulate our wells:**
+
+```{r}
+ag_pct <- runif(1e4, 0, 80)
+nitrate_hat <- wells_beta_0 + wells_beta_1 * ag_pct
+nitrate <- rnorm(1e4, mean = nitrate_hat, sd = wells_sigma)
+simualted_population <- tibble(ag_pct, nitrate_hat, nitrate)
+```
+
+### You do: tree canopy and surface temperature
+
+Pavement and rooftops soak up summer sun, making cities hotter than their surroundings. Trees shade the ground and cool the air through evapotranspiration. If tree canopy cools neighborhoods, then neighborhoods with more canopy should have lower summer surface temperatures.
+
+A city measures tree canopy and the average July land surface temperature in 40 neighborhoods.
+
+- x: tree canopy cover (%)
+- y: July land surface temperature (°C)
+- $\beta_1$: change in surface temperature per additional percentage point of canopy
+
+## Setup
+
+### We do
+
+Population parameters
+
+```{r}
+
+```
+
+Simulated population of wells
+
+```{r}
+
+```
+
+Visualize
+
+```{r}
+
+```
+
+A water agency tests 30 wells
+
+```{r}
+```
+
+Fit the model
+
+```{r}
+
+```
+
+Compare the fitted line (light) to the population line (dark)
+
+```{r}
+
+```
+
+### You do
+
+Run this chunk to simulate the data. In real life we wouldn't know the population parameters, but here we can use them to check our inferences.
+
+```{r}
+# Population parameters
+beta_0 <- 42 # Surface temperature (°C) with no canopy
+beta_1 <- -0.01 # Change in surface temperature per % canopy (°C per %)
+sigma <- 3 # Residual standard deviation (°C)
+
+# One sample of 40 neighborhoods
+canopy_pct <- runif(40, 0, 60)
+surface_temp <- rnorm(40, beta_0 + beta_1 * canopy_pct, sigma)
+neighborhoods <- tibble(canopy_pct, surface_temp)
+```
+
+Visualize the data.
+
+```{r}
+ggplot(neighborhoods, aes(canopy_pct, surface_temp)) +
+  geom_point(shape = 21, fill = "forestgreen", color = "darkgreen", size = 3) +
+  labs(x = "Tree canopy (%)", y = "July surface temperature (°C)")
+```
+
+Fit a linear model of surface temperature by canopy. Then extract $\hat \beta_1$.
+
+```{r}
+canopy_lm <- lm(_____ ~ _____, data = _____)
+summary(canopy_lm)
+beta_1_hat <- coef(canopy_lm)[_____]
+beta_1_hat
+```
+
+## Part 1: p-value by permutation
+
+### We do
+
+$H_0$: $\beta_1 = 0$
+
+$H_A$: $\beta_1 \ne 0$
+
+If $H_0$ is true, then farmland has no relationship with nitrate, so shuffling farmland shouldn't make a difference. Shuffle farmland 1000 times and re-fit the model to get the **null distribution** of $\hat\beta_1$.
+
+```{r}
+
+```
+
+Compare the null distribution to the observed $\hat\beta_1$. Shade the regions at least as extreme as the observed $\hat\beta_1$ (in either direction, because $H_A$ is two-sided).
+
+```{r}
+
+```
+
+The **p-value** is the proportion of the null distribution at least as extreme as the observed $\hat\beta_1$
+
+```{r}
+
+```
+
+### You do
+
+$H_0$: $\beta_1 = 0$
+
+$H_A$: $\beta_1 \ne 0$
+
+If $H_0$ is true, shuffling canopy across neighborhoods shouldn't make a difference. Shuffle `canopy_pct` 1,000 times, refitting the model each time, to build the null distribution of $\hat \beta_1$.
+
+```{r}
+permutations <- replicate(1e3, {
+  permuted_sample <- neighborhoods |>
+    mutate(canopy_pct = _____(canopy_pct))
+  permuted_lm <- lm(surface_temp ~ canopy_pct, data = _____)
+  coef(_____)["canopy_pct"]
+})
+null_distribution <- tibble(beta_1_hat = permutations)
+```
+
+Visualize the null distribution. Shade the regions at least as extreme as the observed $\hat \beta_1$ (in either direction, because $H_A$ is two-sided).
+
+```{r}
+ggplot(null_distribution, aes(beta_1_hat)) +
+  geom_histogram(bins = 30) +
+  annotate(
+    "rect",
+    xmin = _____,
+    xmax = _____,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "firebrick",
+    alpha = 0.2
+  ) +
+  annotate(
+    "rect",
+    xmin = _____,
+    xmax = _____,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "firebrick",
+    alpha = 0.2
+  ) +
+  geom_vline(xintercept = beta_1_hat, color = "firebrick", linewidth = 1.5)
+```
+
+Calculate the p-value: the proportion of the null distribution at least as extreme as the observed $\hat \beta_1$.
+
+```{r}
+perm_pvalue <- mean(_____(null_distribution$beta_1_hat) >= _____(beta_1_hat))
+perm_pvalue
+```
+
+Interpret the p-value in one sentence. Do you reject $H_0$?
+
+> _Your answer here_
+
+## Part 2: p-value by mathematical model
+
+### We do
+
+Compare the permutation p-value to `lm()`'s `Pr(>|t|)`
+
+```{r}
+
+```
+
+### You do
+
+Find the p-value for `canopy_pct` in the coefficients table. `Pr(>|t|)` is **two-sided**, just like our $H_A$.
+
+```{r}
+coef(summary(canopy_lm))
+lm_pvalue <- coef(summary(canopy_lm))["canopy_pct", _____]
+lm_pvalue
+```
+
+How do the permutation and `lm()` p-values compare? Do they lead to the same conclusion?
+
+> _Your answer here_
+
+## Part 3: confidence interval by bootstrap
+
+### We do
+
+Treat the sample as a stand-in for the population. Resample it _with replacement_ 1000 times and re-fit the model to approximate the sampling distribution of $\hat\beta_1$.
+
+```{r}
+
+```
+
+The middle 95% of the bootstrap distribution is the 95% **confidence interval**. Shade it on the bootstrap distribution, and compare to the observed $\hat\beta_1$ (solid) and the true $\beta_1$ (dashed).
+
+```{r}
+
+```
+
+### You do
+
+How much does surface temperature change per percentage point of canopy? Resample the neighborhoods _with replacement_ 1,000 times, refitting the model each time, to approximate the sampling distribution of $\hat \beta_1$.
+
+```{r}
+bootstraps <- replicate(1e3, {
+  boot_sample <- slice_sample(
+    neighborhoods,
+    n = _____,
+    replace = _____
+  )
+  boot_lm <- lm(_____ ~ _____, data = _____)
+  coef(boot_lm)["canopy_pct"]
+})
+boot_distribution <- tibble(beta_1_hat = bootstraps)
+```
+
+Find the middle 95% of the bootstrap distribution.
+
+```{r}
+boot_ci <- quantile(boot_distribution$beta_1_hat, c(_____, _____))
+boot_ci
+```
+
+Visualize the bootstrap distribution. Shade the 95% CI, and mark the observed $\hat \beta_1$ (solid) and the population $\beta_1$ (dashed).
+
+```{r}
+ggplot(boot_distribution, aes(beta_1_hat)) +
+  geom_histogram(bins = 30) +
+  annotate(
+    "rect",
+    xmin = _____,
+    xmax = _____,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "cornflowerblue",
+    alpha = 0.3
+  ) +
+  geom_vline(xintercept = _____, color = "firebrick", linewidth = 1.5) +
+  geom_vline(
+    xintercept = _____,
+    color = "firebrick",
+    linewidth = 1.5,
+    linetype = "dashed"
+  )
+```
+
+Interpret the confidence interval in one sentence. Does it contain the population $\beta_1$?
+
+> _Your answer here_
+
+## Part 4: confidence interval by mathematical model
+
+### We do
+
+Compare the bootstrap and `confint()` confidence intervals
+
+```{r}
+
+```
+
+The standard deviation of the bootstrap distribution approximates the standard error
+
+```{r}
+
+```
+
+### You do
+
+Let `confint()` calculate the 95% CI.
+
+```{r}
+lm_ci <- _____(canopy_lm)["canopy_pct", ]
+lm_ci
+```
+
+The standard deviation of the bootstrap distribution approximates the standard error. Compare them.
+
+```{r}
+_____(boot_distribution$beta_1_hat)
+coef(summary(canopy_lm))["canopy_pct", _____]
+```
+

@@ -1,0 +1,64 @@
+--- 
+title: "EDS 222 Week 4 Wednesday"
+format: html
+---
+
+## Setup
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw(18))
+
+# Load the soil core data
+soil_cores <- read_csv("recorded_lectures/exide-soil-cores.csv") |> 
+    filter(pb_ppm <= 5e3) |> 
+    left_join(
+        read_csv("recorded_lectures/exide-property-covariates.csv"), 
+        by = "property_id"
+    ) |> 
+        mutate(home_age = 2026 - year_built) |> 
+        drop_na(pb_ppm, home_age, location_code)
+```
+
+# Visualize the data
+
+Plot home age on the x-axis, soil lead on the y axis, and location (DL ir YD) in color.
+
+```{r}
+ggplot(soil_cores, aes(home_age, pb_ppm, color = location_code)) +
+    geom_point(shape = 21, alpha = 0.5) +
+    labs(x = "Home Age (years)", y = "Soil lead (ppm)", color = "Location")
+```
+
+# Fit the model and interpret
+
+The differnece in the `lm()` model formula between additive and interactive models is `*` versus a `+`.
+
+```{r}
+age_location_lm <- lm(pb_ppm ~ home_age * location_code, soil_cores)
+summary(age_location_lm)
+```
+Output:
+Call:
+lm(formula = pb_ppm ~ home_age * location_code, data = soil_cores)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-488.11  -97.68  -43.67   37.01 2866.23 
+
+Coefficients:
+                          Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              -160.4176    49.4567  -3.244 0.001191 ** 
+home_age                    5.6912     0.5249  10.842  < 2e-16 ***
+location_codeYD           196.2820    54.2201   3.620 0.000298 ***
+*home_age:location_codeYD*   -3.7338     0.5749  -6.494 9.44e-11 ***
+*^^ this is the interaction term between home_age and yard*
+        *-> aka, measures how much the slope changes between categories*
+*Therefore, the rate of lead accumulation along the drip line is 5.7,*
+*whereas the rate of accumulation in the yard is 2.0*
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 220.2 on 3719 degrees of freedom
+Multiple R-squared:  0.1012,	Adjusted R-squared:  0.1005 
+F-statistic: 139.6 on 3 and 3719 DF,  p-value: < 2.2e-16

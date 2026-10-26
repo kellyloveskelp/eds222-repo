@@ -11,8 +11,6 @@ We're going to see how to sample from both *empirical* and *parametri*c* distrib
 ```{r}
 library(tidyverse)
 set.seed(222)
-#source("/home/kellymorgan/meds/my_aes/my_theme.R")
-# theme_set(my_theme())
 theme_set(theme_bw())
 
 soil_cores <- read_csv("exide-soil-cores.csv")
